@@ -1,12 +1,75 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <title>האתר של מנדי</title>
-</head>
-<body>
-    <h1>ברוכים הבאים לאתר של מנדי ברנדויין!</h1>
-    <p>כאן יופיעו עדכוני הבוקר והספר "הכל בראש".</p>
-</body>
-</html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>מוצר-מתקן</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  /* Light warm palette */
+  --bg:#f5f3ef;
+  --bg2:#ede9e3;
+  --surface:#ffffff;
+  --surface2:#faf8f5;
+  --surface3:#f0ede7;
+  --border:#e8e3db;
+  --border2:#d8d2c8;
+  --text:#1a1714;
+  --text2:#6b6560;
+  --text3:#a09890;
+  /* Accents */
+  --amber:#c8751a;
+  --amber-bg:rgba(200,117,26,.08);
+  --amber-border:rgba(200,117,26,.2);
+  --amber-light:#fff8f0;
+  --green:#1a8c54;
+  --green-bg:rgba(26,140,84,.08);
+  --blue:#1a6aa8;
+  --blue-bg:rgba(26,106,168,.08);
+  --purple:#6b44c8;
+  --purple-bg:rgba(107,68,200,.08);
+  --red:#c8281a;
+  --red-bg:rgba(200,40,26,.07);
+  --teal:#0f8c7a;
+  --teal-bg:rgba(15,140,122,.08);
+  /* Radii */
+  --r-xs:8px;--r-sm:12px;--r-md:16px;--r-lg:20px;--r-xl:24px;
+  /* Shadows */
+  --sh-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --sh-md:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+  --sh-lg:0 8px 24px rgba(0,0,0,.1),0 4px 8px rgba(0,0,0,.05);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl;overflow-x:hidden;padding-bottom:calc(68px + env(safe-area-inset-bottom))}
 
+/* ---- BOTTOM NAV ---- */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);z-index:300;padding-bottom:env(safe-area-inset-bottom);display:flex}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 2px 7px;border:none;background:transparent;color:var(--text3);font-family:'Heebo',sans-serif;font-size:9px;font-weight:600;cursor:pointer;gap:4px;transition:color .2s;min-height:56px;letter-spacing:.2px}
+.bnav-btn.active{color:var(--amber)}
+.bnav-btn svg{width:19px;height:19px;flex-shrink:0;stroke-width:1.8}
+.bnav-btn.active svg{stroke-width:2.2}
+
+/* ---- PAGE ---- */
+.page{max-width:720px;margin:0 auto;padding:0 0 8px;position:relative}
+
+/* ---- PAGE HEADER (sticky) ---- */
+.page-top{padding:16px 16px 0;background:var(--bg);position:sticky;top:0;z-index:100;border-bottom:1px solid transparent;transition:border-color .2s,background .2s}
+.page-top.scrolled{border-color:var(--border);background:rgba(245,243,239,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+
+/* ---- SECTION ---- */
+.section{padding:16px 16px 0}
+.section+.section{padding-top:0}
+
+/* ---- CARDS ---- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm);margin-bottom:12px;overflow:hidden}
+.card-body{padding:16px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0}
+.card-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+.card-divider{height:1px;background:var(--border);margin:12px 16px 0}
+
+/* ---- TOP HEADER ---- */
+.top-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px}
+.th-left .th-label{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:3px}
+.th-left .th-date{font
