@@ -82,9 +82,27 @@ body::after{content:'';position:fixed;bottom:60px;left:-100px;width:320px;height
 .ring-hrs-n{font-size:22px;font-weight:900;color:var(--text);line-height:1;letter-spacing:-.5px}
 .ring-hrs-l{font-size:9px;color:var(--text3);font-weight:700;margin-top:2px;letter-spacing:.2px}
 
-/* TASK BLOCKS */
+/* STAM SUB-TABS */
+.stam-tabs{display:flex;gap:0;overflow-x:auto;border-bottom:1.5px solid var(--border);scrollbar-width:none;background:var(--surface);position:sticky;top:0;z-index:50}
+.stam-tabs::-webkit-scrollbar{display:none}
+.stam-tab{flex:1;min-width:fit-content;padding:10px 8px 8px;border:none;background:transparent;color:var(--text3);font-family:'Heebo',sans-serif;font-size:11px;font-weight:700;cursor:pointer;border-bottom:2.5px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
+.stam-tab.active{color:var(--coral);border-bottom-color:var(--coral)}
+.stam-page{display:none}
+.stam-page.active{display:block}
+.stam-row-badge{padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700}
+.stam-b-done{background:var(--green-bg);color:var(--green)}
+.stam-b-lap{background:var(--blue-bg);color:var(--blue)}
+.stam-b-empty{background:rgba(26,26,62,.06);color:var(--text3)}
+
 .blocks-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px}
 @media(min-width:460px){.blocks-grid{grid-template-columns:repeat(3,1fr)}}
+.block.dragging{opacity:.35;transform:scale(.95);box-shadow:none!important;border-style:dashed!important}
+.block.drag-over{border-color:var(--coral)!important;box-shadow:0 0 0 2px rgba(255,107,107,.25)!important;transform:scale(1.03)}
+.drag-handle{position:absolute;top:5px;left:5px;width:18px;height:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;cursor:grab;opacity:0;transition:opacity .2s;z-index:2}
+.drag-handle:active{cursor:grabbing}
+.drag-handle span{width:10px;height:1.5px;background:var(--text3);border-radius:2px;display:block}
+.block:hover .drag-handle{opacity:1}
+.drag-hint{font-size:9px;color:var(--text3);text-align:center;padding:4px 0 0;font-weight:500;opacity:.7}
 .block{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:13px 12px 11px;position:relative;overflow:hidden;cursor:pointer;transition:box-shadow .2s,border-color .2s;box-shadow:var(--sh-sm)}
 .block:active{transform:scale(.97)}
 .block.done{border-color:rgba(6,214,160,.3);background:linear-gradient(135deg,#f0fffb,#e6fff8)}
@@ -455,6 +473,7 @@ select{background:var(--surface);border:1.5px solid var(--border2);border-radius
     <div class="card fu" style="animation-delay:.14s;overflow:visible">
       <div class="card-hd"><span class="card-title">משימות היום</span></div>
       <div class="blocks-grid" id="blocks-grid"></div>
+      <div class="drag-hint">✥ גרור משימה לשינוי סדר — לוח הזמנים יתעדכן אוטומטית</div>
     </div>
     <div class="actions fu" style="animation-delay:.17s;margin-bottom:12px">
       <button class="btn btn-primary" onclick="allDone()">✓ סמן הכל</button>
@@ -513,32 +532,187 @@ select{background:var(--surface);border:1.5px solid var(--border2);border-radius
   </div>
 </div>
 
-<!-- STOPWATCH TAB -->
+<!-- STOPWATCH / STAM TAB -->
 <div id="tab-sw" style="display:none" class="tab-page">
-  <div class="sec-hd fu"><div class="lbl">כלים</div><h1>שעון עצר</h1></div>
-  <div class="section">
+  <div class="sec-hd fu"><div class="lbl">כתיבת סת"מ</div><h1>שעון עצר</h1></div>
+
+  <!-- inner sub-tabs -->
+  <div class="stam-tabs" id="stam-tabs">
+    <button class="stam-tab active" onclick="stamTab('stopwatch')">⏱ שעון</button>
+    <button class="stam-tab" onclick="stamTab('pages')">📖 עמודים</button>
+    <button class="stam-tab" onclick="stamTab('history')">📅 היסטוריה</button>
+    <button class="stam-tab" onclick="stamTab('stats')">📊 סטטיסטיקות</button>
+    <button class="stam-tab" onclick="stamTab('stam-settings')">⚙️ הגדרות</button>
+  </div>
+
+  <!-- STAM: STOPWATCH PAGE -->
+  <div id="stam-stopwatch" class="stam-page active section" style="padding-top:12px">
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:13px">📄</span>
+          <label style="font-size:12px;color:var(--text2);font-weight:600;flex:1">עמוד נוכחי:</label>
+          <input type="text" id="cur-page-input" placeholder="א" oninput="stamSaveCurPage()" style="width:70px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Heebo',sans-serif;font-size:13px;padding:6px 9px;outline:none;text-align:center">
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:14px">
+          <div style="text-align:center">
+            <div style="font-size:28px;font-weight:900;color:var(--sky)" id="stam-row-num">1</div>
+            <div style="font-size:10px;color:var(--text3);font-weight:600">שורה</div>
+          </div>
+          <div style="text-align:center;flex:1">
+            <div class="sw-digits" id="stam-row-disp" style="font-size:44px">00:00.0</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px" id="stam-total-line">סה"כ היום: <strong id="stam-total-disp">00:00</strong></div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:22px;height:44px;border:2px solid var(--border2);border-radius:5px;position:relative;background:var(--surface2);overflow:hidden">
+              <div id="stam-bat-fill" style="position:absolute;bottom:0;left:0;right:0;height:0%;background:var(--mint);transition:height .4s,background .4s;border-radius:2px"></div>
+            </div>
+            <div style="font-size:10px;color:var(--text3)" id="stam-bat-pct">0%</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px">
+            <span>התקדמות עמוד</span><span id="stam-page-prog-time">0:00 / 2.5ש'</span>
+          </div>
+          <div style="background:rgba(26,26,62,.07);border-radius:99px;height:6px;overflow:hidden">
+            <div id="stam-page-bar" style="height:100%;border-radius:99px;width:0%;background:var(--sky);transition:width .4s"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button class="btn btn-primary" id="stam-btn-main" onclick="stamMainBtn()" style="flex:1">התחל</button>
+          <button class="btn btn-ghost" id="stam-btn-pause" onclick="stamTogglePause()" disabled>השהה ⏸</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button class="btn btn-ghost btn-sm" onclick="stamFinishRow()" style="flex:1">✅ סיים שורה (Enter)</button>
+          <button class="btn btn-ghost btn-sm" onclick="stamResetSession()" style="color:var(--red)">↺ אפס</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><span class="card-title">שורות</span>
+        <button class="btn btn-ghost btn-sm" onclick="stamExportDay()" style="font-size:10px;padding:0 10px;height:28px">📊 ייצוא</button>
+      </div>
+      <div class="card-body" style="padding-top:8px;overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="background:rgba(26,26,62,.04)">
+            <th style="padding:5px 7px;text-align:right;color:var(--text3);font-weight:700;font-size:10px">#</th>
+            <th style="padding:5px 7px;text-align:right;color:var(--text3);font-weight:700;font-size:10px">סטטוס</th>
+            <th style="padding:5px 7px;text-align:right;color:var(--text3);font-weight:700;font-size:10px">זמן</th>
+            <th style="padding:5px 7px;text-align:right;color:var(--text3);font-weight:700;font-size:10px">הערה</th>
+            <th style="padding:5px 7px;width:24px"></th>
+          </tr></thead>
+          <tbody id="stam-row-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAM: PAGES -->
+  <div id="stam-pages" class="stam-page section" style="display:none;padding-top:12px">
+    <div class="stats-row" style="margin-bottom:10px">
+      <div class="stat-card" style="border-top-color:var(--mint)"><div class="stat-n" id="stam-sum-done" style="color:var(--mint)">0</div><div class="stat-l">נכתבו</div></div>
+      <div class="stat-card" style="border-top-color:var(--tangerine)"><div class="stat-n" id="stam-sum-left" style="color:var(--tangerine)">248</div><div class="stat-l">נותרו</div></div>
+      <div class="stat-card" style="border-top-color:var(--sky)"><div class="stat-n" id="stam-sum-pct" style="color:var(--sky)">0%</div><div class="stat-l">הושלם</div></div>
+    </div>
+    <div style="background:rgba(26,26,62,.07);border-radius:99px;height:8px;overflow:hidden;margin-bottom:12px">
+      <div id="stam-pages-bar" style="height:100%;border-radius:99px;width:0%;background:var(--mint);transition:width .5s"></div>
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin-bottom:10px;padding:0 2px">לחץ לסימון עמוד ✓ · לחיצה שוב = ביטול</p>
+    <div id="stam-pages-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:5px"></div>
+  </div>
+
+  <!-- STAM: HISTORY -->
+  <div id="stam-history" class="stam-page section" style="display:none;padding-top:12px">
+    <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px">
+      <button class="jcat active" id="stam-htab-daily" onclick="stamSwitchHTab('daily')">יומי</button>
+      <button class="jcat" id="stam-htab-weekly" onclick="stamSwitchHTab('weekly')">שבועי</button>
+      <button class="jcat" id="stam-htab-monthly" onclick="stamSwitchHTab('monthly')">חודשי</button>
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn btn-ghost btn-sm" onclick="stamExportHistXLSX('daily')">📊 יומי</button>
+      <button class="btn btn-ghost btn-sm" onclick="stamExportHistXLSX('weekly')">📊 שבועי</button>
+      <button class="btn btn-ghost btn-sm" onclick="stamExportHistXLSX('monthly')">📊 חודשי</button>
+    </div>
+    <div id="stam-history-content"></div>
+    <button class="btn btn-ghost btn-sm" onclick="stamClearHistory()" style="margin-top:8px;color:var(--red)">🗑 נקה היסטוריה</button>
+  </div>
+
+  <!-- STAM: STATS -->
+  <div id="stam-stats" class="stam-page section" style="display:none;padding-top:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px">
+      <div class="card"><div class="card-body" style="padding:12px">
+        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:6px;font-weight:700">יעד חודשי (עמודים)</label>
+        <input type="number" id="stam-monthly-goal" min="1" max="248" value="10" oninput="stamSaveGoals()" style="width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Heebo',sans-serif;font-size:14px;padding:6px 8px;outline:none">
+        <div style="font-size:20px;font-weight:900;margin-top:7px;color:var(--sky)" id="stam-monthly-done">0</div>
+        <div style="font-size:11px;color:var(--text3)" id="stam-monthly-pct">0% מהיעד</div>
+      </div></div>
+      <div class="card"><div class="card-body" style="padding:12px">
+        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:6px;font-weight:700">יעד שנתי (עמודים)</label>
+        <input type="number" id="stam-yearly-goal" min="1" max="248" value="100" oninput="stamSaveGoals()" style="width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Heebo',sans-serif;font-size:14px;padding:6px 8px;outline:none">
+        <div style="font-size:20px;font-weight:900;margin-top:7px;color:var(--sky)" id="stam-yearly-done">0</div>
+        <div style="font-size:11px;color:var(--text3)" id="stam-yearly-pct">0% מהיעד</div>
+      </div></div>
+    </div>
     <div class="card"><div class="card-body">
-      <div class="sw-row"><span>🎯</span><input class="sw-in" id="sw-goal-in" placeholder="מה אני רוצה להשיג?"></div>
-      <div class="sw-display">
-        <div class="sw-digits" id="sw-disp">00:00:00</div>
-        <div class="sw-ms" id="sw-ms-disp">.00</div>
-        <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:5px;min-height:16px;font-weight:500" id="sw-goal-disp"></div>
-      </div>
-      <div class="sw-btns">
-        <button class="btn btn-green" id="sw-start-btn" onclick="swStartStop()" style="min-width:88px">▶ התחל</button>
-        <button class="btn btn-ghost" onclick="swLap()">🏁 הקפה</button>
-        <button class="btn btn-ghost" style="color:var(--red)" onclick="swReset()">↺ איפוס</button>
-      </div>
-      <div class="sw-row">
-        <span style="font-size:13px">🔔</span>
-        <label style="font-size:11px;color:var(--text2);flex:1;font-weight:500">התראה כל</label>
-        <input class="sw-num-in" id="sw-alert-mins" type="number" value="3" min="1" max="120">
-        <span style="font-size:11px;color:var(--text3);font-weight:500">דקות</span>
+      <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:7px">סה"כ עמודים</div>
+      <div style="font-size:20px;font-weight:900;color:var(--mint)" id="stam-total-pages-done">0 / 248</div>
+      <div style="background:rgba(26,26,62,.07);border-radius:99px;height:7px;overflow:hidden;margin-top:9px">
+        <div id="stam-total-prog" style="height:100%;border-radius:99px;width:0%;background:var(--mint);transition:width .5s"></div>
       </div>
     </div></div>
-    <div class="card" id="laps-card" style="display:none">
-      <div class="card-hd"><span class="card-title" id="laps-title">הקפות</span></div>
-      <div class="card-body" style="padding-top:10px"><div class="laps-list" id="laps-list"></div></div>
+  </div>
+
+  <!-- STAM: SETTINGS -->
+  <div id="stam-stam-settings" class="stam-page section" style="display:none;padding-top:12px">
+    <div class="card" style="margin-bottom:10px"><div class="card-body">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">שעון עצר</div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+        <label style="font-size:12px;color:var(--text2);flex:1;font-weight:600">יעד זמן לשורה (דקות)</label>
+        <input type="number" id="stam-set-row-mins" min="0.5" max="30" step="0.5" value="2.5" oninput="stamSaveSettings()" style="width:70px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Heebo',sans-serif;font-size:13px;padding:6px 8px;outline:none;text-align:center">
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+        <label style="font-size:12px;color:var(--text2);flex:1;font-weight:600">יעד זמן לעמוד (שעות)</label>
+        <input type="number" id="stam-set-page-hours" min="0.5" max="10" step="0.5" value="2.5" oninput="stamSaveSettings()" style="width:70px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Heebo',sans-serif;font-size:13px;padding:6px 8px;outline:none;text-align:center">
+      </div>
+    </div></div>
+    <div class="card" style="margin-bottom:10px"><div class="card-body">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">התראה קולית</div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+        <label style="font-size:12px;color:var(--text2);flex:1;font-weight:600">הפעל אחרי (דקות, 0=כבוי)</label>
+        <input type="number" id="stam-set-alert-mins" min="0" max="30" step="0.5" value="3" oninput="stamSaveSettings()" style="width:60px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Heebo',sans-serif;font-size:13px;padding:6px 8px;outline:none;text-align:center">
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="stam-sound-opts">
+        <button class="jcat active" data-s="beep" onclick="stamPickSound('beep')">צפצוף</button>
+        <button class="jcat" data-s="ding" onclick="stamPickSound('ding')">צלצול</button>
+        <button class="jcat" data-s="bell" onclick="stamPickSound('bell')">פעמון</button>
+        <button class="jcat" data-s="off" onclick="stamPickSound('off')">כבוי</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="stamTestSound()">▶ בדוק צליל</button>
+    </div></div>
+    <div class="card"><div class="card-body">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px">שליחת מייל</div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+        <label style="font-size:12px;color:var(--text2);flex:1;font-weight:600">כתובת מייל</label>
+        <input type="email" id="stam-set-email" placeholder="name@example.com" oninput="stamSaveSettings()" style="width:160px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Heebo',sans-serif;font-size:12px;padding:7px 9px;outline:none">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="stamSendEmailReport()">📧 שלח דו"ח</button>
+    </div></div>
+  </div>
+
+</div>
+
+<!-- STAM OVERLAY -->
+<div class="modal-overlay" id="stam-overlay" onclick="if(event.target===this)stamCloseOverlay()">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <p id="stam-overlay-msg" style="font-size:14px;margin-bottom:18px;line-height:1.6;color:var(--text)">האם אתה בטוח?</p>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-danger" id="stam-overlay-ok" style="flex:1">אישור</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="stamCloseOverlay()">ביטול</button>
     </div>
   </div>
 </div>
@@ -909,7 +1083,121 @@ const dLbl=d=>{const h=pDur(d);if(h<1)return Math.round(h*60)+'ד׳';if(h===1)re
 const totHrs=()=>tasks.reduce((s,t)=>s+pDur(t.dur),0);
 const CAT_ICONS={'c-prayer':'🌅','c-torah':'📖','c-writing':'✍️','c-music':'🎵','c-custom':'⭐'};
 
-function renderBlocks(){const g=document.getElementById('blocks-grid');g.innerHTML='';tasks.forEach((t,i)=>{const done=!!doneMap[t.id];const d=document.createElement('div');d.className='block '+(t.cat||'c-custom')+(done?' done':'');d.dataset.id=t.id;d.innerHTML=`<div class="block-top"><div class="block-icon">${t.icon||'⭐'}</div><div class="block-check${done?' on':''}" onclick="toggleTask(${t.id})">${done?'✓':''}</div></div><div class="block-name">${t.name}</div><div class="block-sub">${dLbl(t.dur)}${t.time?' · '+t.time:''}</div><div class="block-bar"><div class="block-fill" id="bf-${t.id}"></div></div><button class="block-menu" onclick="openCtx(event,${t.id})">•••</button>`;g.appendChild(d);setTimeout(()=>{const f=document.getElementById('bf-'+t.id);if(f)f.classList.add('go');},50+i*30);});updateRing();updateHrs();}
+function renderBlocks(){
+  const g=document.getElementById('blocks-grid');
+  g.innerHTML='';
+  tasks.forEach((t,i)=>{
+    const done=!!doneMap[t.id];
+    const d=document.createElement('div');
+    d.className='block '+(t.cat||'c-custom')+(done?' done':'');
+    d.dataset.id=t.id;
+    d.dataset.idx=i;
+    d.draggable=true;
+    d.innerHTML=`
+      <div class="drag-handle" title="גרור לסידור"><span></span><span></span><span></span></div>
+      <div class="block-top"><div class="block-icon">${t.icon||'⭐'}</div><div class="block-check${done?' on':''}" onclick="toggleTask(${t.id})">${done?'✓':''}</div></div>
+      <div class="block-name">${t.name}</div>
+      <div class="block-sub">${dLbl(t.dur)}${t.time?' · '+t.time:''}</div>
+      <div class="block-bar"><div class="block-fill" id="bf-${t.id}"></div></div>
+      <button class="block-menu" onclick="openCtx(event,${t.id})">•••</button>`;
+    // Drag events
+    d.addEventListener('dragstart',e=>{
+      dragSrcIdx=i;
+      d.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData('text/plain',i);
+    });
+    d.addEventListener('dragend',()=>{
+      d.classList.remove('dragging');
+      document.querySelectorAll('.block.drag-over').forEach(el=>el.classList.remove('drag-over'));
+    });
+    d.addEventListener('dragover',e=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      document.querySelectorAll('.block.drag-over').forEach(el=>el.classList.remove('drag-over'));
+      if(dragSrcIdx!==i)d.classList.add('drag-over');
+    });
+    d.addEventListener('dragleave',()=>d.classList.remove('drag-over'));
+    d.addEventListener('drop',e=>{
+      e.preventDefault();
+      d.classList.remove('drag-over');
+      if(dragSrcIdx===null||dragSrcIdx===i)return;
+      const moved=tasks.splice(dragSrcIdx,1)[0];
+      tasks.splice(i,0,moved);
+      ss('tasks',JSON.stringify(tasks));
+      dragSrcIdx=null;
+      renderBlocks();
+      renderTimeline();
+      showToast('↕ סדר עודכן');
+    });
+    // Touch drag support
+    d.addEventListener('touchstart',handleTouchStart,{passive:true});
+    d.addEventListener('touchmove',handleTouchMove,{passive:false});
+    d.addEventListener('touchend',handleTouchEnd,{passive:true});
+    g.appendChild(d);
+    setTimeout(()=>{const f=document.getElementById('bf-'+t.id);if(f)f.classList.add('go');},50+i*30);
+  });
+  updateRing();
+  updateHrs();
+}
+
+// Drag state
+let dragSrcIdx=null;
+
+// Touch drag support
+let touchDragEl=null,touchDragIdx=null,touchClone=null,touchOffX=0,touchOffY=0;
+function handleTouchStart(e){
+  const handle=e.target.closest('.drag-handle');
+  if(!handle)return;
+  const block=e.target.closest('.block');
+  if(!block)return;
+  touchDragEl=block;
+  touchDragIdx=parseInt(block.dataset.idx);
+  const touch=e.touches[0];
+  const rect=block.getBoundingClientRect();
+  touchOffX=touch.clientX-rect.left;
+  touchOffY=touch.clientY-rect.top;
+  touchClone=block.cloneNode(true);
+  touchClone.style.cssText=`position:fixed;z-index:9999;width:${rect.width}px;opacity:.85;pointer-events:none;border-radius:var(--r-lg);box-shadow:var(--sh-lg);transform:scale(1.04);transition:none`;
+  touchClone.style.left=(touch.clientX-touchOffX)+'px';
+  touchClone.style.top=(touch.clientY-touchOffY)+'px';
+  document.body.appendChild(touchClone);
+  block.style.opacity='.3';
+}
+function handleTouchMove(e){
+  if(!touchClone)return;
+  e.preventDefault();
+  const touch=e.touches[0];
+  touchClone.style.left=(touch.clientX-touchOffX)+'px';
+  touchClone.style.top=(touch.clientY-touchOffY)+'px';
+  document.querySelectorAll('.block.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  const els=document.elementsFromPoint(touch.clientX,touch.clientY);
+  const target=els.find(el=>el.classList.contains('block')&&el!==touchDragEl);
+  if(target)target.classList.add('drag-over');
+}
+function handleTouchEnd(e){
+  if(!touchClone)return;
+  const touch=e.changedTouches[0];
+  const els=document.elementsFromPoint(touch.clientX,touch.clientY);
+  const target=els.find(el=>el.classList.contains('block')&&el!==touchDragEl);
+  touchClone.remove();
+  touchClone=null;
+  if(touchDragEl)touchDragEl.style.opacity='';
+  document.querySelectorAll('.block.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  if(target&&touchDragIdx!==null){
+    const targetIdx=parseInt(target.dataset.idx);
+    if(targetIdx!==touchDragIdx){
+      const moved=tasks.splice(touchDragIdx,1)[0];
+      tasks.splice(targetIdx,0,moved);
+      ss('tasks',JSON.stringify(tasks));
+      renderBlocks();
+      renderTimeline();
+      showToast('↕ סדר עודכן');
+    }
+  }
+  touchDragEl=null;
+  touchDragIdx=null;
+}
 function renderTimeline(){const cm={'c-prayer':'tl-prayer','c-torah':'tl-torah','c-writing':'tl-writing','c-music':'tl-music','c-custom':'tl-free'};document.getElementById('timeline-list').innerHTML=tasks.map(t=>`<div class="tl-row"><span class="tl-t">${t.time||'—'}</span><div class="tl-block ${cm[t.cat]||'tl-free'}">${t.icon||''} ${t.name}<span class="tl-dur">${t.dur}</span></div></div>`).join('');}
 function updateHrs(){const v=totHrs().toFixed(1).replace(/\.0$/,'');['total-hrs','s-hrs'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=v;});}
 
@@ -1139,8 +1427,291 @@ let toastT;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200);}
 function launchConfetti(){const c=['#ff6b6b','#ffd166','#06d6a0','#4cc9f0','#b388ff','#ff8c42'];for(let i=0;i<44;i++){const el=document.createElement('div');el.className='confp';el.style.cssText=`left:${8+Math.random()*84}vw;top:${Math.random()*12}vh;background:${c[i%c.length]};animation-delay:${Math.random()*.8}s;animation-duration:${1.2+Math.random()*.5}s`;document.body.appendChild(el);setTimeout(()=>el.remove(),2200);}}
 
+// ══════════════════════════════════════════
+// כתיבת סת"מ — STAM STOPWATCH MODULE
+// ══════════════════════════════════════════
+function hebrewNumber(n){if(n<=0||n>999)return String(n);const sp={15:'טו',16:'טז',11:'יא',12:'יב',13:'יג',14:'יד',17:'יז',18:'יח',19:'יט'};if(sp[n])return sp[n];const H=['','ק','ר','ש','ת','תק','תר','תש','תת','תתק'],T=['','י','כ','ל','מ','נ','ס','ע','פ','צ'],O=['','א','ב','ג','ד','ה','ו','ז','ח','ט'];let s='',h=Math.floor(n/100);s+=H[h];n-=h*100;if(sp[n])return s+sp[n];let t=Math.floor(n/10);s+=T[t];n-=t*10;return s+O[n];}
+const STAM_PAGE_LABELS=[];for(let i=1;i<=248;i++)STAM_PAGE_LABELS.push(hebrewNumber(i));
+const stamEmptyRow=i=>({num:i+1,status:'empty',time:0,start:'',end:'',noteTxt:'',noteCls:'',note:''});
+
+let stamState={running:false,paused:false,rowTimer:0,totalTimer:0,pageTimer:0,rowStart:null,alertFired:false,nudgeTimer:null,currentPage:'',rows:Array.from({length:42},(_,i)=>stamEmptyRow(i)),activeRowIdx:0,sessionStarted:false};
+let stamSettings={rowMins:2.5,pageHours:2.5,alertMins:3,sound:'beep',nudgeCount:3,nudgeSecs:10,email:''};
+let stamDonePages=new Set();
+let stamHistory=[];
+let stamGoals={monthly:10,yearly:100};
+let stamInterval=null;
+let stamHistTab='daily';
+let stamAudioCtx=null;
+
+function stamLoad(){
+  try{
+    const s=S.getItem('sstam_s');if(s)stamSettings={...stamSettings,...JSON.parse(s)};
+    const d=S.getItem('sstam_d');if(d)stamDonePages=new Set(JSON.parse(d));
+    const h=S.getItem('sstam_h');if(h)stamHistory=JSON.parse(h);
+    const g=S.getItem('sstam_g');if(g)stamGoals={...stamGoals,...JSON.parse(g)};
+    const r=S.getItem('sstam_r');
+    if(r){const rd=JSON.parse(r);stamState.rows=rd.rows||stamState.rows;stamState.totalTimer=rd.total||0;stamState.currentPage=rd.cp||'';stamState.activeRowIdx=rd.ari||0;stamState.pageTimer=rd.pt||0;}
+  }catch(e){}
+  stamApplySettings();stamRenderRows();stamRenderPages();stamRenderStats();stamRenderHistory();stamUpdateDisplay();
+  document.getElementById('stam-monthly-goal').value=stamGoals.monthly;
+  document.getElementById('stam-yearly-goal').value=stamGoals.yearly;
+}
+function stamApplySettings(){
+  document.getElementById('stam-set-row-mins').value=stamSettings.rowMins;
+  document.getElementById('stam-set-page-hours').value=stamSettings.pageHours;
+  document.getElementById('stam-set-alert-mins').value=stamSettings.alertMins;
+  document.getElementById('stam-set-email').value=stamSettings.email||'';
+  document.getElementById('cur-page-input').value=stamState.currentPage;
+  document.querySelectorAll('#stam-sound-opts .jcat').forEach(o=>o.classList.toggle('active',o.dataset.s===stamSettings.sound));
+}
+function stamSaveSettings(){
+  stamSettings.rowMins=parseFloat(document.getElementById('stam-set-row-mins').value)||2.5;
+  stamSettings.pageHours=parseFloat(document.getElementById('stam-set-page-hours').value)||2.5;
+  stamSettings.alertMins=parseFloat(document.getElementById('stam-set-alert-mins').value)||3;
+  stamSettings.email=document.getElementById('stam-set-email').value;
+  S.setItem('sstam_s',JSON.stringify(stamSettings));
+}
+function stamSaveGoals(){
+  stamGoals.monthly=parseInt(document.getElementById('stam-monthly-goal').value)||10;
+  stamGoals.yearly=parseInt(document.getElementById('stam-yearly-goal').value)||100;
+  S.setItem('sstam_g',JSON.stringify(stamGoals));stamRenderStats();
+}
+function stamSaveCurPage(){stamState.currentPage=document.getElementById('cur-page-input').value;stamSaveRows();}
+function stamSaveRows(){S.setItem('sstam_r',JSON.stringify({rows:stamState.rows,total:stamState.totalTimer,cp:stamState.currentPage,ari:stamState.activeRowIdx,pt:stamState.pageTimer}));}
+function stamSaveDone(){S.setItem('sstam_d',JSON.stringify([...stamDonePages]));}
+function stamSaveHistory(){S.setItem('sstam_h',JSON.stringify(stamHistory));}
+
+function stamTab(name){
+  ['stopwatch','pages','history','stats','stam-settings'].forEach(n=>{
+    const el=document.getElementById('stam-'+n);if(el)el.style.display=n===name?'block':'none';
+  });
+  document.querySelectorAll('.stam-tab').forEach((t,i)=>t.classList.toggle('active',['stopwatch','pages','history','stats','stam-settings'][i]===name));
+  if(name==='stats')stamRenderStats();
+  if(name==='pages')stamRenderPages();
+  if(name==='history')stamRenderHistory();
+}
+
+function stamFmt(ms,dec=true){const t=Math.floor(ms/1000),h=Math.floor(t/3600),m=Math.floor((t%3600)/60),sc=t%60,d=Math.floor((ms%1000)/100);if(h>0)return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sc).padStart(2,'0');return String(m).padStart(2,'0')+':'+String(sc).padStart(2,'0')+(dec?'.'+d:'');}
+function stamPad(n){return n<10?'0'+n:n;}
+function stamFmtTime(d){return stamPad(d.getHours())+':'+stamPad(d.getMinutes())+':'+stamPad(d.getSeconds());}
+function stamMsToMin(ms){return Math.round(ms/60000*10)/10;}
+
+function stamTick(){
+  if(stamState.running&&!stamState.paused){
+    stamState.rowTimer=Date.now()-stamState.rowStart;
+    stamState.totalTimer+=50;stamState.pageTimer+=50;
+    stamUpdateDisplay();stamCheckAlert();
+  }
+}
+function stamUpdateDisplay(){
+  const rd=document.getElementById('stam-row-disp');if(rd)rd.textContent=stamFmt(stamState.rowTimer);
+  const td=document.getElementById('stam-total-disp');if(td)td.textContent=stamFmt(stamState.totalTimer,false);
+  const rg=stamSettings.rowMins*60000,bp=Math.min(100,Math.round(stamState.rowTimer/rg*100));
+  const bf=document.getElementById('stam-bat-fill');
+  if(bf){bf.style.height=bp+'%';bf.style.background=bp>=100?'var(--red)':bp>=80?'var(--tangerine)':bp>=50?'var(--sunshine)':'var(--mint)';}
+  const bpct=document.getElementById('stam-bat-pct');if(bpct)bpct.textContent=bp+'%';
+  const pg=stamSettings.pageHours*3600000,pp=Math.min(100,Math.round(stamState.pageTimer/pg*100));
+  const pb=document.getElementById('stam-page-bar');if(pb){pb.style.width=pp+'%';pb.style.background=pp>=100?'var(--red)':pp>=80?'var(--tangerine)':'var(--sky)';}
+  const e=stamState.pageTimer,hh=Math.floor(e/3600000),mm=Math.floor((e%3600000)/60000),sss=Math.floor((e%60000)/1000);
+  const ppt=document.getElementById('stam-page-prog-time');if(ppt)ppt.textContent=(hh>0?hh+':':'')+stamPad(mm)+':'+stamPad(sss)+' / '+stamSettings.pageHours+"ש'";
+  const rn=document.getElementById('stam-row-num');if(rn)rn.textContent=stamState.activeRowIdx+1;
+}
+function stamCheckAlert(){
+  if(!stamSettings.alertMins||stamSettings.sound==='off')return;
+  if(!stamState.alertFired&&stamState.rowTimer>=stamSettings.alertMins*60000){stamState.alertFired=true;stamFireAlert();}
+}
+function stamFireAlert(){stamPlaySound();if(stamSettings.nudgeCount>0){let c=0;stamState.nudgeTimer=setInterval(()=>{c++;stamPlaySound();if(c>=stamSettings.nudgeCount){clearInterval(stamState.nudgeTimer);stamState.nudgeTimer=null;}},10000);}}
+function stamStopNudge(){if(stamState.nudgeTimer){clearInterval(stamState.nudgeTimer);stamState.nudgeTimer=null;}}
+function stamGetAC(){if(!stamAudioCtx)stamAudioCtx=new(window.AudioContext||window.webkitAudioContext)();return stamAudioCtx;}
+function stamPlaySound(){
+  if(stamSettings.sound==='off')return;
+  try{const ctx=stamGetAC(),o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);
+    if(stamSettings.sound==='ding'){o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.35,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+1);o.start();o.stop(ctx.currentTime+1);}
+    else if(stamSettings.sound==='bell'){o.frequency.value=523;o.type='triangle';g.gain.setValueAtTime(.4,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+1.2);o.start();o.stop(ctx.currentTime+1.2);}
+    else{o.frequency.value=660;o.type='square';g.gain.setValueAtTime(.25,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.5);o.start();o.stop(ctx.currentTime+.5);}
+  }catch(e){}
+}
+function stamTestSound(){stamPlaySound();}
+function stamPickSound(s){stamSettings.sound=s;document.querySelectorAll('#stam-sound-opts .jcat').forEach(o=>o.classList.toggle('active',o.dataset.s===s));stamSaveSettings();}
+
+function stamAutoNote(ms){const gm=stamSettings.rowMins*60000,fm=2.5*60000;if(ms<=fm)return{text:'יפה מאד ✨',cls:'ng'};if(ms<=gm)return{text:'כל הכבוד! 👍',cls:'nb'};return{text:'לא נורא 💪',cls:'nk'};}
+
+function stamMainBtn(){
+  if(!stamState.sessionStarted){
+    stamState.sessionStarted=true;stamState.running=true;stamState.paused=false;
+    stamState.rowTimer=0;stamState.alertFired=false;stamState.rowStart=Date.now();
+    const mb=document.getElementById('stam-btn-main');if(mb)mb.textContent='הקפה ⏱';
+    const pb=document.getElementById('stam-btn-pause');if(pb)pb.disabled=false;
+  } else {stamLapRow();}
+}
+function stamLapRow(){
+  if(!stamState.running)return;
+  const elapsed=stamState.rowTimer,now=new Date(),idx=stamState.activeRowIdx;
+  if(idx<42){const n=stamAutoNote(elapsed);stamState.rows[idx]={...stamState.rows[idx],status:'הקפה',time:elapsed,start:stamFmtTime(new Date(Date.now()-elapsed)),end:stamFmtTime(now),noteTxt:n.text,noteCls:n.cls};}
+  stamSaveHistoryEntry(idx,elapsed,'הקפה');
+  stamStopNudge();stamState.rowTimer=0;stamState.rowStart=Date.now();stamState.alertFired=false;
+  stamState.activeRowIdx=Math.min(stamState.activeRowIdx+1,41);
+  stamRenderRows();stamSaveRows();
+}
+function stamFinishRow(){
+  if(!stamState.running)return;
+  const elapsed=stamState.rowTimer,now=new Date(),idx=stamState.activeRowIdx;
+  if(idx<42){const n=stamAutoNote(elapsed);stamState.rows[idx]={...stamState.rows[idx],status:'הושלם',time:elapsed,start:stamFmtTime(new Date(Date.now()-elapsed)),end:stamFmtTime(now),noteTxt:n.text,noteCls:n.cls};}
+  stamSaveHistoryEntry(idx,elapsed,'הושלם');
+  stamStopNudge();stamState.rowTimer=0;stamState.rowStart=Date.now();stamState.alertFired=false;
+  stamState.activeRowIdx=Math.min(stamState.activeRowIdx+1,41);
+  stamUpdateDisplay();stamRenderRows();stamSaveRows();showToast('✅ שורה הושלמה');
+}
+function stamSaveHistoryEntry(idx,elapsed,status){
+  const today=new Date().toLocaleDateString('he-IL');
+  const rd={num:idx+1,status,time:elapsed,start:stamState.rows[idx].start,end:stamState.rows[idx].end,note:stamState.rows[idx].note||''};
+  const ex=stamHistory.find(h=>h.date===today);
+  if(ex){ex.rows++;ex.totalMs+=elapsed;ex.rowDetail=ex.rowDetail||[];ex.rowDetail.push(rd);}
+  else stamHistory.unshift({date:today,rows:1,totalMs:elapsed,page:stamState.currentPage,rowDetail:[rd]});
+  stamSaveHistory();
+}
+function stamTogglePause(){
+  if(!stamState.running)return;
+  stamState.paused=!stamState.paused;
+  const pb=document.getElementById('stam-btn-pause');
+  if(pb)pb.textContent=stamState.paused?'המשך ▶':'השהה ⏸';
+  if(!stamState.paused)stamState.rowStart=Date.now()-stamState.rowTimer;
+}
+function stamResetSession(){
+  stamShowOverlay('לאפס את כל השורות?',()=>{
+    stamState.running=false;stamState.paused=false;stamState.rowTimer=0;stamState.totalTimer=0;stamState.pageTimer=0;
+    stamState.sessionStarted=false;stamState.activeRowIdx=0;
+    stamState.rows=Array.from({length:42},(_,i)=>stamEmptyRow(i));
+    stamStopNudge();
+    const mb=document.getElementById('stam-btn-main');if(mb)mb.textContent='התחל';
+    const pb=document.getElementById('stam-btn-pause');if(pb){pb.disabled=true;pb.textContent='השהה ⏸';}
+    stamUpdateDisplay();stamRenderRows();stamSaveRows();
+  });
+}
+function stamDeleteRow(idx){stamShowOverlay('למחוק שורה '+(idx+1)+'?',()=>{stamState.rows[idx]=stamEmptyRow(idx);stamRenderRows();stamSaveRows();});}
+function stamEditNote(idx,val){stamState.rows[idx].note=val;stamSaveRows();}
+
+function stamRenderRows(){
+  const tbody=document.getElementById('stam-row-tbody');if(!tbody)return;
+  const used=stamState.rows.filter(r=>r.status!=='empty');
+  const toShow=used.length?[...used,...stamState.rows.slice(used.length,Math.min(used.length+3,42))]:[...stamState.rows.slice(0,5)];
+  tbody.innerHTML=toShow.map((r,i)=>{
+    const realIdx=stamState.rows.indexOf(r);
+    const isA=stamState.running&&!stamState.paused&&realIdx===stamState.activeRowIdx&&r.status==='empty';
+    const sb=r.status==='empty'?`<span class="stam-row-badge stam-b-empty">ממתין</span>`:r.status==='הושלם'?`<span class="stam-row-badge stam-b-done">הושלם</span>`:`<span class="stam-row-badge stam-b-lap">הקפה</span>`;
+    const tz=r.time>0?stamFmt(r.time):'—';
+    const an=r.status!=='empty'?`<span style="font-size:10px;color:var(--text3)">${r.noteTxt}</span>`:'';
+    const un=r.status!=='empty'?`<input style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Heebo',sans-serif;font-size:10px;padding:3px 5px;width:80px;outline:none" value="${(r.note||'').replace(/"/g,'&quot;')}" placeholder="הערה..." oninput="stamEditNote(${realIdx},this.value)">`:'';
+    const ac=r.status!=='empty'?`<button onclick="stamDeleteRow(${realIdx})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px">🗑</button>`:'';
+    return`<tr style="${isA?'background:rgba(76,201,240,.07)':''}"><td style="padding:5px 7px;color:var(--text3);font-size:11px">${r.num}</td><td style="padding:5px 7px">${sb}</td><td style="padding:5px 7px;font-family:monospace;font-size:11px">${tz}</td><td style="padding:5px 7px">${an}${un}</td><td style="padding:5px 4px">${ac}</td></tr>`;
+  }).join('');
+}
+
+function stamRenderPages(){
+  const done=stamDonePages.size,left=248-done,pct=Math.round(done/248*100);
+  const sd=document.getElementById('stam-sum-done');if(sd)sd.textContent=done;
+  const sl=document.getElementById('stam-sum-left');if(sl)sl.textContent=left;
+  const sp2=document.getElementById('stam-sum-pct');if(sp2)sp2.textContent=pct+'%';
+  const pb=document.getElementById('stam-pages-bar');if(pb)pb.style.width=pct+'%';
+  const pg=document.getElementById('stam-pages-grid');
+  if(pg)pg.innerHTML=STAM_PAGE_LABELS.map((l,i)=>`<div style="border:1.5px solid ${stamDonePages.has(i)?'var(--mint)':'var(--border)'};border-radius:7px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;cursor:pointer;background:${stamDonePages.has(i)?'rgba(6,214,160,.15)':'var(--surface)'};color:${stamDonePages.has(i)?'var(--green)':'var(--text3)'};transition:all .15s;min-height:38px" onclick="stamTogglePage(${i})" title="${l}">${l}</div>`).join('');
+}
+function stamTogglePage(i){
+  if(stamDonePages.has(i)){stamShowOverlay('למחוק סימון עמוד '+STAM_PAGE_LABELS[i]+'?',()=>{stamDonePages.delete(i);stamSaveDone();stamRenderPages();stamRenderStats();});}
+  else{stamDonePages.add(i);stamSaveDone();stamRenderPages();stamRenderStats();showToast('✅ עמוד '+STAM_PAGE_LABELS[i]+' סומן');}
+}
+
+function stamGetWeekKey(ds){const p=ds.split('.');if(p.length!==3)return ds;const d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));const jan1=new Date(d.getFullYear(),0,1);const wk=Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);return`שבוע ${wk}, ${d.getFullYear()}`;}
+function stamGetMonthKey(ds){const p=ds.split('.');if(p.length!==3)return ds;const months=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];return months[parseInt(p[1])-1]+' '+p[2];}
+
+function stamSwitchHTab(t){
+  stamHistTab=t;
+  ['daily','weekly','monthly'].forEach(n=>{const el=document.getElementById('stam-htab-'+n);if(el)el.classList.toggle('active',n===t);});
+  stamRenderHistory();
+}
+function stamRenderHistory(){
+  const el=document.getElementById('stam-history-content');if(!el)return;
+  if(!stamHistory.length){el.innerHTML='<p style="font-size:12px;color:var(--text3);padding:12px 0">אין היסטוריה עדיין</p>';return;}
+  if(stamHistTab==='daily'){
+    el.innerHTML=stamHistory.slice(0,60).map(h=>`<div class="card" style="margin-bottom:8px"><div class="card-body" style="padding:11px 14px"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12px;font-weight:800">${h.date}</span><span style="font-size:11px;color:var(--text3)">${h.page?'עמוד: '+h.page:''}</span></div><span style="color:var(--sky);font-weight:800">${h.rows}</span><span style="font-size:12px;color:var(--text2)"> שורות · </span><span style="color:var(--mint);font-weight:700">${stamFmt(h.totalMs,false)}</span>${h.rowDetail&&h.rowDetail.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:7px">${h.rowDetail.map(r=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:10px;color:var(--text2)">שורה ${r.num}: ${stamFmt(r.time)}</div>`).join('')}</div>`:''}</div></div>`).join('');
+  } else if(stamHistTab==='weekly'){
+    const weeks={};stamHistory.forEach(h=>{const k=stamGetWeekKey(h.date);if(!weeks[k])weeks[k]={key:k,days:0,rows:0,ms:0};weeks[k].days++;weeks[k].rows+=h.rows;weeks[k].ms+=h.totalMs;});
+    el.innerHTML=Object.values(weeks).map(w=>`<div class="card" style="margin-bottom:8px"><div class="card-body" style="padding:11px 14px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;font-weight:800">${w.key}</span><span style="font-size:11px;color:var(--text3)">${w.days} ימים</span></div><span style="color:var(--sky);font-weight:800">${w.rows}</span><span style="font-size:12px;color:var(--text2)"> שורות · </span><span style="color:var(--mint);font-weight:700">${stamFmt(w.ms,false)}</span></div></div>`).join('');
+  } else {
+    const months={};stamHistory.forEach(h=>{const k=stamGetMonthKey(h.date);if(!months[k])months[k]={key:k,days:0,rows:0,ms:0};months[k].days++;months[k].rows+=h.rows;months[k].ms+=h.totalMs;});
+    el.innerHTML=Object.values(months).map(m=>`<div class="card" style="margin-bottom:8px"><div class="card-body" style="padding:11px 14px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;font-weight:800">${m.key}</span><span style="font-size:11px;color:var(--text3)">${m.days} ימים</span></div><span style="color:var(--sky);font-weight:800">${m.rows}</span><span style="font-size:12px;color:var(--text2)"> שורות · </span><span style="color:var(--mint);font-weight:700">${stamFmt(m.ms,false)}</span></div></div>`).join('');
+  }
+}
+function stamClearHistory(){stamShowOverlay('למחוק את כל ההיסטוריה?',()=>{stamHistory=[];stamSaveHistory();stamRenderHistory();stamRenderStats();});}
+
+function stamRenderStats(){
+  const done=stamDonePages.size;
+  const tpd=document.getElementById('stam-total-pages-done');if(tpd)tpd.textContent=done+' / 248';
+  const tp=document.getElementById('stam-total-prog');if(tp)tp.style.width=Math.round(done/248*100)+'%';
+  const now=new Date(),tm=now.getMonth(),ty=now.getFullYear();
+  let mr=0,yr=0;
+  stamHistory.forEach(h=>{const p=h.date.split('.');if(p.length===3){const m=parseInt(p[1])-1,y=parseInt(p[2]);if(y===ty){yr+=h.rows||0;if(m===tm)mr+=h.rows||0;}}});
+  const mp=Math.round(mr/42),yp=Math.round(yr/42);
+  const md=document.getElementById('stam-monthly-done');if(md)md.textContent=mp;
+  const mpct=document.getElementById('stam-monthly-pct');if(mpct)mpct.textContent=Math.round(mp/(stamGoals.monthly||1)*100)+'% מהיעד';
+  const yd=document.getElementById('stam-yearly-done');if(yd)yd.textContent=yp;
+  const ypct=document.getElementById('stam-yearly-pct');if(ypct)ypct.textContent=Math.round(yp/(stamGoals.yearly||1)*100)+'% מהיעד';
+}
+
+function stamExportDay(){
+  const today=new Date().toLocaleDateString('he-IL');
+  const rows=stamState.rows.filter(r=>r.status!=='empty');
+  if(!rows.length){showToast('אין שורות לייצוא');return;}
+  let csv='#,סטטוס,זמן,התחלה,סיום,הערה\n';
+  rows.forEach(r=>{csv+=`${r.num},${r.status},${stamFmt(r.time)},${r.start},${r.end},${r.note||''}\n`;});
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='כתיבה_יומית_'+today.replace(/\//g,'-')+'.csv';a.click();
+}
+function stamExportHistXLSX(type){
+  let rows=[];
+  if(type==='daily'){rows=stamHistory.map(h=>[h.date,h.page||'',h.rows,stamFmt(h.totalMs,false)]);}
+  else if(type==='weekly'){const w={};stamHistory.forEach(h=>{const k=stamGetWeekKey(h.date);if(!w[k])w[k]={k,d:0,r:0,ms:0};w[k].d++;w[k].r+=h.rows;w[k].ms+=h.totalMs;});rows=Object.values(w).map(x=>[x.k,x.d,x.r,stamFmt(x.ms,false)]);}
+  else{const m={};stamHistory.forEach(h=>{const k=stamGetMonthKey(h.date);if(!m[k])m[k]={k,d:0,r:0,ms:0};m[k].d++;m[k].r+=h.rows;m[k].ms+=h.totalMs;});rows=Object.values(m).map(x=>[x.k,x.d,x.r,stamFmt(x.ms,false)]);}
+  if(!rows.length){showToast('אין נתונים');return;}
+  const headers={'daily':['תאריך','עמוד','שורות','זמן כולל'],'weekly':['שבוע','ימי כתיבה','שורות','זמן'],'monthly':['חודש','ימי כתיבה','שורות','זמן']};
+  let csv=headers[type].join(',')+'\n'+rows.map(r=>r.join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='כתיבה_'+type+'_'+new Date().toLocaleDateString('he-IL').replace(/\//g,'-')+'.csv';a.click();
+}
+function stamSendEmailReport(){
+  const email=stamSettings.email||document.getElementById('stam-set-email').value;
+  if(!email){showToast('הזן כתובת מייל');return;}
+  let body='דו"ח כתיבת סת"מ\n\nעמודים: '+stamDonePages.size+'/248\n\nהיסטוריה:\n';
+  stamHistory.slice(0,20).forEach(h=>{body+=h.date+' - '+h.rows+' שורות, '+stamFmt(h.totalMs,false)+'\n';});
+  window.location.href='mailto:'+email+'?subject='+encodeURIComponent('דו"ח כתיבת סת"מ')+'&body='+encodeURIComponent(body);
+}
+
+function stamShowOverlay(msg,cb){
+  const ov=document.getElementById('stam-overlay');
+  const om=document.getElementById('stam-overlay-msg');
+  const ok=document.getElementById('stam-overlay-ok');
+  if(om)om.textContent=msg;
+  if(ov)ov.classList.add('open');
+  if(ok)ok.onclick=()=>{stamCloseOverlay();if(cb)cb();};
+}
+function stamCloseOverlay(){const ov=document.getElementById('stam-overlay');if(ov)ov.classList.remove('open');}
+
+// keyboard shortcuts for stam (active only when sw tab visible)
+document.addEventListener('keydown',e=>{
+  const swTab=document.getElementById('tab-sw');
+  if(!swTab||swTab.style.display==='none')return;
+  const tag=document.activeElement.tagName;
+  if(tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA')return;
+  if(e.key==='Enter'){e.preventDefault();if(stamState.sessionStarted)stamFinishRow();}
+  if(e.key===' '){e.preventDefault();stamTogglePause();}
+  if(e.key==='Escape'){e.preventDefault();if(stamState.sessionStarted)stamLapRow();}
+});
+
+// ══════════════════════════════════════════
+
 (function(){
   initState();setDate();tick();setInterval(tick,1000);
+  stamLoad();stamInterval=setInterval(stamTick,50);
   document.getElementById('streak-num').textContent=streak;
   document.getElementById('s-streak').textContent=streak;
   showQ(qIdx);renderArticle();
